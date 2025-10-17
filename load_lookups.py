@@ -1,25 +1,19 @@
 # psycopg2-binary
-from config import DATABASE_URL
+from config import raw, staging, engine
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
+from utils import trunc_and_load
 
-
-engine = create_engine(DATABASE_URL)
-
-raw = "raw"
-staging = "staging"
 
 def load_lookup(raw_table, staging_table, raw_col, staging_col):
+
     q = text(f'SELECT DISTINCT "{raw_col}" AS val FROM {raw}."{raw_table}" WHERE "{raw_col}" IS NOT NULL')
-    df = (
-        # Cleaning column values
-        pd.read_sql(q, engine)
-          .assign(val=lambda d: d["val"].str.strip())
-          .query('val != ""')
-          .drop_duplicates()
-          .rename(columns={"val": staging_col})
-    )
-    print("Created df")
+    
+    # Cleaning column values
+    df = pd.read_sql(q, engine)
+    df["val"] = df["val"].str.strip()
+    df = df.query('val != ""').drop_duplicates().rename(columns={"val": staging_col})
+
     # :v is the SQL dynamic variable
     insert_sql = text(f"""
         INSERT INTO {staging}.{staging_table} ({staging_col})
@@ -49,24 +43,20 @@ def load_procedure():
     """), engine)
 
     # Clean values
-    df = df.assign(
-        # .assign parameter: column_name=function
-        # i.e. it passes back a function on columns of "d" that run .strip().
-        # lambda creates an anonymous inline function after :
-        cdt_code=lambda d: d["cdt_code"].str.strip(),
-        name=lambda d: d["name"].str.strip(),
-        service_type=lambda d: d["service_type"].str.strip()
-    ).drop_duplicates()
+    df["cdt_code"] = df["cdt_code"].str.strip()
+    df["name"] = df["name"].str.strip() 
+    df["service_type"] = df["service_type"].str.strip()
+    df = df.drop_duplicates()
 
     # Resolve foreign key
     service_df = pd.read_sql(f"SELECT service_type_id, type FROM {staging}.service_type", engine)
 
     # Create joined table and drop unnecessary cols
     df = (
-    df.merge(service_df, how="inner", left_on="service_type", right_on="type")
-      .drop(columns=["service_type", "type"])
-      .assign(service_type_id=lambda d: d["service_type_id"].astype("Int64"))
+        df.merge(service_df, how="inner", left_on="service_type", right_on="type")
+        .drop(columns=["service_type", "type"])
     )
+    df["service_type_id"]= df["service_type_id"].astype("Int64")
 
     # Insert into staging
     insert_sql = text(f"""
@@ -75,11 +65,8 @@ def load_procedure():
         ON CONFLICT (cdt_code) DO NOTHING
     """)
 
-    with engine.begin() as conn:
-        conn.execute(text(f"TRUNCATE TABLE {staging}.procedure RESTART IDENTITY CASCADE;"))
-        if not df.empty:
-            conn.execute(insert_sql, df.to_dict(orient="records"))
-
+    # Custom util function
+    trunc_and_load(df, "procedure", insert_sql)
     print(f"Loaded {len(df)} rows into {staging}.procedure")
 
 load_lookup("Carrier", "carrier", "Carrier Name", "name")

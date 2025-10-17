@@ -1,10 +1,10 @@
 # psycopg2-binary
-from config import DATABASE_URL, excel_path
+from config import excel_path, engine
 from datetime import datetime
 import pandas as pd
 from sqlalchemy import create_engine
 
-engine = create_engine(DATABASE_URL)
+
 xlsx = pd.ExcelFile(excel_path)
 
 exclude_sheets = ["Fact Sheet ->", "Reference Sheets ->", "README", "Yes No"]
@@ -21,6 +21,7 @@ for sheet in xlsx.sheet_names:
         )
         print(f"{sheet} successfully loaded")
 
+# Creating and loading load_timestamp table
 timestamp_df = pd.DataFrame([{"load_time": datetime.now()}])
 timestamp_df.to_sql(
     name="load_timestamp",

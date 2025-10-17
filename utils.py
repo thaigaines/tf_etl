@@ -1,11 +1,15 @@
-# psycopg2-binary
-from config import DATABASE_URL
+from config import staging, engine
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 
-engine = create_engine(DATABASE_URL)
 
-def drop_tables(schema):
+def trunc_and_load(df, table, insert_sql):
+    with engine.begin() as conn:
+        conn.execute(text(f"TRUNCATE TABLE {staging}.{table} RESTART IDENTITY CASCADE;"))
+        if not df.empty:
+            conn.execute(insert_sql, df.to_dict(orient="records"))
+
+def drop_schema_tables(schema):
     with engine.begin() as conn:
         conn.execute(text(f"""
             DO $$
@@ -20,5 +24,3 @@ def drop_tables(schema):
     """))
         
     print("Schema tables sucessfully dropped.")
-
-drop_tables('staging')
