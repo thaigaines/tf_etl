@@ -19,8 +19,8 @@ def drop_schema_tables(schema):
                     FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = '{schema}')
                     LOOP
                         EXECUTE 'DROP TABLE {schema}.' || quote_ident(r.tablename) || ' CASCADE;';
-                END LOOP;
-    END $$;
-    """))
+                    END LOOP;
+                END $$;
+        """))
         
-    print("Schema tables sucessfully dropped.")
+    print("Schema tables successfully dropped.")

@@ -2,12 +2,13 @@
 from config import excel_path, engine
 from datetime import datetime
 import pandas as pd
-from sqlalchemy import create_engine
+from utils import drop_schema_tables
 
 
 xlsx = pd.ExcelFile(excel_path)
+exclude_sheets = ["Yes No"]
 
-exclude_sheets = ["Fact Sheet ->", "Reference Sheets ->", "README", "Yes No"]
+drop_schema_tables('raw')
 
 for sheet in xlsx.sheet_names:
     if sheet not in exclude_sheets:
