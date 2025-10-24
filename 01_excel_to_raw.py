@@ -8,7 +8,7 @@ from utils import drop_schema_tables
 xlsx = pd.ExcelFile(excel_path)
 exclude_sheets = ["Yes No"]
 
-drop_schema_tables('raw')
+drop_schema_tables("raw")
 
 for sheet in xlsx.sheet_names:
     if sheet not in exclude_sheets:

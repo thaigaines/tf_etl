@@ -67,6 +67,7 @@ def load_procedure():
 
     # Custom util function
     trunc_and_load(df, "procedure", insert_sql)
+    
     print(f"Loaded {len(df)} rows into {staging}.procedure")
 
 load_lookup("Carrier", "carrier", "Carrier Name", "name")
