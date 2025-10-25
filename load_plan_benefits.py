@@ -57,7 +57,7 @@ def load_plan_benefits():
     for key_col in foreign_keys:
         df[key_col] = df[key_col].astype("Int64")
 
-    print("Plan Benefit columns after merge:", df.columns.tolist())
+    print("Plan Benefit Columns after merges:", df.columns.tolist())
 
     # Insert values into staging
     insert_sql = text(f"""
@@ -68,5 +68,3 @@ def load_plan_benefits():
     trunc_and_load(df, "plan_benefit", insert_sql)
     
     print(f"Loaded {len(df)} rows into {staging}.plan_benefits")
-
-load_plan_benefits()

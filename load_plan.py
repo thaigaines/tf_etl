@@ -44,7 +44,7 @@ def load_plan():
     for key_col in foreign_keys:
         df[key_col] = df[key_col].astype("Int64")
 
-    print("Columns after merges:", df.columns.tolist())
+    print("Plan Columns after merges:", df.columns.tolist())
 
     # Insert values into staging
     insert_sql = text(f"""
@@ -56,5 +56,3 @@ def load_plan():
     trunc_and_load(df, "plan", insert_sql)
 
     print(f"Loaded {len(df)} rows into {staging}.plan")
-
-load_plan()
